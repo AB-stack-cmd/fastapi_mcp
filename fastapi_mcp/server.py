@@ -3,9 +3,11 @@ import httpx
 from typing import Dict, Optional, Any, List, Union, Literal, Sequence
 from typing_extensions import Annotated, Doc
 
+
 from fastapi import FastAPI, Request, APIRouter, params
 from fastapi.openapi.utils import get_openapi
 from mcp.server.lowlevel.server import Server
+from fastapi_mcp import FastApiMCP
 import mcp.types as types
 
 from fastapi_mcp.openapi.convert import convert_openapi_to_mcp_tools
@@ -17,6 +19,7 @@ import logging
 
 
 logger = logging.getLogger(__name__)
+app = FastAPI()
 
 
 class FastApiMCP:
@@ -112,11 +115,14 @@ class FastApiMCP:
         if self._auth_config:
             self._auth_config = self._auth_config.model_validate(self._auth_config)
 
-        self._http_client = http_client or httpx.AsyncClient(
+            self._http_client = http_client or httpx.AsyncClient(
             transport=httpx.ASGITransport(app=self.fastapi, raise_app_exceptions=False),
             base_url=self._base_url,
             timeout=10.0,
-        )
+        ) # type: ignore
+     
+            
+        
 
         self._forward_headers = {h.lower() for h in headers}
         self._http_transport: FastApiHttpSessionManager | None = None  # Store reference to HTTP transport for cleanup
@@ -654,3 +660,7 @@ class FastApiMCP:
             }
 
         return filtered_tools
+
+if __name__ == "__main__":
+    mcp = FastApiMCP(app)
+    mcp.mount()
