@@ -28,7 +28,9 @@ class FastApiMCP:
     """
 
     def __init__(
-        self,
+        self,  
+    
+
         fastapi: Annotated[
             FastAPI,
             Doc("The FastAPI application to create an MCP server from"),
@@ -49,15 +51,16 @@ class FastApiMCP:
             bool,
             Doc("Whether to include full json schema for responses in tool descriptions"),
         ] = False,
-        http_client: Annotated[
-            Optional[httpx.AsyncClient],
-            Doc(
-                """
-                Optional custom HTTP client to use for API calls to the FastAPI app.
-                Has to be an instance of `httpx.AsyncClient`.
-                """
-            ),
-        ] = None,
+         http_client: Optional[httpx.AsyncClient] = None,
+         http_client_args: Optional[Dict[str, Any]] = None,
+        #  [
+
+        #  Doc( """
+        #         Optional custom HTTP client to use for API calls to the FastAPI app.
+        #         Has to be an instance of `httpx.AsyncClient`.
+        #         """
+        #     ),
+        # ] = None,
         include_operations: Annotated[
             Optional[List[str]],
             Doc("List of operation IDs to include as MCP tools. Cannot be used with exclude_operations."),
@@ -87,6 +90,8 @@ class FastApiMCP:
                 """
             ),
         ] = ["authorization"],
+          
+        
     ):
         # Validate operation and tag filtering options
         if include_operations is not None and exclude_operations is not None:
@@ -115,11 +120,24 @@ class FastApiMCP:
         if self._auth_config:
             self._auth_config = self._auth_config.model_validate(self._auth_config)
 
-            self._http_client = http_client or httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=self.fastapi, raise_app_exceptions=False),
-            base_url=self._base_url,
-            timeout=10.0,
-        ) # type: ignore
+            http_client_args = http_client_args or {}
+
+            defaults = {
+                "transport": httpx.ASGITransport(app=self.fastapi, raise_app_exceptions=False),
+                 "base_url": self._base_url,
+                "timeout": 10.0,
+              }
+
+            merged_args = {**defaults, **http_client_args}
+
+            self._http_client = http_client or httpx.AsyncClient(**merged_args)
+
+
+            # self._http_client = http_client or httpx.AsyncClient(
+            # transport=httpx.ASGITransport(app=self.fastapi, raise_app_exceptions=False),
+            # base_url=self._base_url,
+            # timeout=10.0,
+        # ) 
      
             
         
